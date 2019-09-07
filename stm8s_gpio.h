@@ -162,4 +162,4 @@ static const struct {
 	gpio_reset, gpio_pin_switch, gpio_get_latch, gpio_get_value,
 	gpio_pullup, gpio_set_speed, gpio_irq, gpio_init
 };
-#endif // STM8S_GPIO_H
+#endif /* STM8S_GPIO_H */

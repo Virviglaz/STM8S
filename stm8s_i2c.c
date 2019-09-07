@@ -42,29 +42,8 @@
  * Pavel Nadein <pavel.nadein@gmail.com>
  */
 
-#ifndef STM8S_SPI_H
-#define STM8S_SPI_H
+void i2c_init()
+{
+	CLK->PCKENR1 |= CLK_PCKENR1_I2C;
 
-#include "stm8s.h"
-#include "stm8s_gpio.h"
-
-enum spi_clock { SPI_CLOCK_LOW, SPI_CLOCK_HIGH };
-enum spi_freq {
-	CLOCK_DEV_2 = 0x00,
-	CLOCK_DEV_4 = 0x08,
-	CLOCK_DEV_8 = 0x10,
-	CLOCK_DEV_16 = 0x18,
-	CLOCK_DEV_32 = 0x20,
-	CLOCK_DEV_64 = 0x28,
-	CLOCK_DEV_128 = 0x30,
-	CLOCK_DEV_256 = 0x38,
-};
-
-void spi_init(enum spi_clock clock, enum spi_freq freq);
-u8 spi_read(u8 value);
-u8 spi_write_reg(GPIO_TypeDef *gpio, enum gpio_pin pin,
-		 u8 reg, u8 *buf, u16 size);
-u8 spi_read_reg(GPIO_TypeDef *gpio, enum gpio_pin pin,
-		 u8 reg, u8 *buf, u16 size);
-
-#endif /* STM8S_SPI_H */
+}
