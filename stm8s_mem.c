@@ -47,7 +47,7 @@
 #define EEPROM_START_ADDRESS	0x4000
 #define EEPROM_END_ADDRESS   	0x427F
 #define EEPROM_SIZE		(EEPROM_END_ADDRESS - EEPROM_START_ADDRESS)
-#define FLASH_BLOCK_SIZE	64
+#define FLASH_BLOCK_SIZE	(uint8_t)64
 
 #define FLASH_RASS_KEY1 ((uint8_t)0x56) /*!< First RASS key */
 #define FLASH_RASS_KEY2 ((uint8_t)0xAE) /*!< Second RASS key */
@@ -81,7 +81,7 @@ static void mem_lock(enum mem memory)
   */
 uint16_t eeprom_write(uint16_t offset, uint8_t *buf, uint16_t size)
 {
-	uint8_t *p = buf + EEPROM_START_ADDRESS;
+	uint8_t *p = (uint8_t *)(EEPROM_START_ADDRESS + offset);
 
 	mem_unlock(FLASH_MEMTYPE_DATA);
 
@@ -104,7 +104,7 @@ uint16_t eeprom_write(uint16_t offset, uint8_t *buf, uint16_t size)
   */
 uint16_t eeprom_read(uint16_t offset, uint8_t *buf, uint16_t size)
 {
-	uint8_t *p = buf + EEPROM_START_ADDRESS;
+	uint8_t *p = (uint8_t *)(EEPROM_START_ADDRESS + offset);
 
 	while ((uint16_t)p < EEPROM_END_ADDRESS && size) {
 		*buf++ = *p++;
