@@ -101,7 +101,7 @@
 #define PF6			GPIOF, PIN_6
 #define PF7			GPIOF, PIN_7
 
-/* Legasy support */
+/* Legacy support */
 #define PIN_ON(x)		gpio_set(x)
 #define PIN_OFF(x)		gpio_reset(x)
 
