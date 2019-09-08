@@ -42,25 +42,39 @@
  * Pavel Nadein <pavel.nadein@gmail.com>
  */
 
-#ifndef STM8S_DELAY_H
-#define STM8S_DELAY_H
+#include "stm8s_adc.h"
 
-#include "stm8s.h"
+#define ADC1_ALIGN_RIGHT	(uint8_t)0x08
 
-enum tin4_prescaler
+/**
+  * @brief  Init the ADC1 with standart right-aligned mode.
+  * @param  ch: ADC channel ADC1_CHANNEL_0..9
+  * @param  pr: Clock preescaller. Check manual for max frequency
+  * @retval None
+  */
+void adc_init (enum adc_channel ch, enum adc_prescaler pr)
 {
-  TIM4_PRESCALER_1	= ((uint8_t)0x00),
-  TIM4_PRESCALER_2	= ((uint8_t)0x01),
-  TIM4_PRESCALER_4	= ((uint8_t)0x02),
-  TIM4_PRESCALER_8	= ((uint8_t)0x03),
-  TIM4_PRESCALER_16	= ((uint8_t)0x04),
-  TIM4_PRESCALER_32	= ((uint8_t)0x05),
-  TIM4_PRESCALER_64	= ((uint8_t)0x06),
-  TIM4_PRESCALER_128	= ((uint8_t)0x07),
-};
+  CLK->PCKENR2 |= CLK_PCKENR2_ADC;
+  ADC1->TDRL = (u8)ch;
+  ADC1->CR1 = (u8)pr;
+  ADC1->CR2 = ADC1_ALIGN_RIGHT;
+  ADC1->CR1 |= ADC1_CR1_ADON;
+}
 
-void delays_init (enum tin4_prescaler pr);
-void delay_us (u8 us);
-void delay_ms (u16 ms);
+/**
+  * @brief  Read the ADC1 and return the result.
+  * @param  ch: ADC channel ADC1_CHANNEL_0..9
+  * @retval uint16_t: conversion result
+  */
+uint16_t adc_read (enum adc_channel ch)
+{
+  uint16_t res;
+  ADC1->CSR = (u8)ch;
+  ADC1->CR1 |= ADC1_CR1_ADON;
+  ADC1->CR1 |= ADC1_CR1_ADON;
+  while (!(ADC1->CSR & ADC1_CSR_EOC));
+  res = ADC1->DRL;
+  res |= ADC1->DRH << 8;
 
-#endif // STM8S_DELAY_H
+  return res;
+}

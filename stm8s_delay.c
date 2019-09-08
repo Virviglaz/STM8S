@@ -44,20 +44,35 @@
 
 #include "stm8s_delay.h"
 
-void delays_init (u8 PRESCALER)
+/**
+  * @brief  Init TIM4 to be used for delay functions.
+  * @param  ch: enum tin4_prescaler main clock devider
+  * @retval none
+  */
+void delays_init (enum tin4_prescaler pr)
 {
   CLK->PCKENR1 |= CLK_PCKENR1_TIM4;
-  TIM4->PSCR = PRESCALER & TIM4_PSCR_PSC;
+  TIM4->PSCR = (u8)pr;
   TIM4->EGR |= TIM4_EGR_UG;
   TIM4->CR1 = TIM4_CR1_CEN;
 }
 
+/**
+  * @brief  Wait us microseconds
+  * @param  us: amount of microseconds to wait
+  * @retval none
+  */
 void delay_us (u8 us)
 {
   TIM4->CNTR = 0;
   while (TIM4->CNTR < us);
 }
 
+/**
+  * @brief  Wait us milliseconds
+  * @param  us: amount of milliseconds to wait
+  * @retval none
+  */
 void delay_ms (u16 ms)
 {
   ms = ms << 2;

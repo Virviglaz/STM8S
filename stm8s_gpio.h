@@ -141,25 +141,4 @@ void gpio_set_speed(GPIO_TypeDef *gpio, enum gpio_pin pin,
 void gpio_irq(GPIO_TypeDef *gpio, enum gpio_pin pin, bool irq);
 void gpio_init(GPIO_TypeDef *gpio, enum gpio_pin pin, enum gpio_dir dir);
 
-static const struct {
-	void (*set_dir)(GPIO_TypeDef *gpio, enum gpio_pin pin,
-			enum gpio_dir dir);
-	void (*set_output)(GPIO_TypeDef *gpio, enum gpio_pin pin,
-		     enum gpio_output_type type);
-	enum gpio_dir (*get_dir)(GPIO_TypeDef *gpio, enum gpio_pin pin);
-	void (*set)(GPIO_TypeDef *gpio, enum gpio_pin pin);
-	void (*reset)(GPIO_TypeDef *gpio, enum gpio_pin pin);
-	void (*pin_switch)(GPIO_TypeDef *gpio, enum gpio_pin pin, bool state);
-	u8 (*get_latch)(GPIO_TypeDef *gpio, enum gpio_pin pin);
-	u8 (*get_value)(GPIO_TypeDef *gpio, enum gpio_pin pin);
-	void (*pullup)(GPIO_TypeDef *gpio, enum gpio_pin pin, bool gpio_pullup);
-	void (*set_speed)(GPIO_TypeDef *gpio, enum gpio_pin pin,
-			enum gpio_speed speed);
-	void (*irq)(GPIO_TypeDef *gpio, enum gpio_pin pin, bool irq);
-	void (*init)(GPIO_TypeDef *gpio, enum gpio_pin pin, enum gpio_dir dir);
-} gpio = {
- 	gpio_set_dir, gpio_set_output, gpio_get_dir, gpio_set,
-	gpio_reset, gpio_pin_switch, gpio_get_latch, gpio_get_value,
-	gpio_pullup, gpio_set_speed, gpio_irq, gpio_init
-};
 #endif // STM8S_GPIO_H
