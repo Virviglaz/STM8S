@@ -44,7 +44,8 @@
 
 #include "stm8s_adc.h"
 
-#define ADC1_ALIGN_RIGHT	(uint8_t)0x08
+#define ADC_ALIGN_RIGHT		(uint8_t)0x08
+#define ADC_STAB_TIME		100
 
 /**
   * @brief  Init the ADC1 with standart right-aligned mode.
@@ -54,11 +55,10 @@
   */
 void adc_init (enum adc_channel ch, enum adc_prescaler pr)
 {
-  CLK->PCKENR2 |= CLK_PCKENR2_ADC;
-  ADC1->TDRL = (u8)ch;
-  ADC1->CR1 = (u8)pr;
-  ADC1->CR2 = ADC1_ALIGN_RIGHT;
-  ADC1->CR1 |= ADC1_CR1_ADON;
+	CLK->PCKENR2 |= CLK_PCKENR2_ADC;
+	ADC1->TDRL = (u8)ch;
+	ADC1->CR2 = ADC_ALIGN_RIGHT;
+	ADC1->CR1 = (u8)pr | ADC1_CR1_ADON;
 }
 
 /**
@@ -68,13 +68,17 @@ void adc_init (enum adc_channel ch, enum adc_prescaler pr)
   */
 uint16_t adc_read (enum adc_channel ch)
 {
-  uint16_t res;
-  ADC1->CSR = (u8)ch;
-  ADC1->CR1 |= ADC1_CR1_ADON;
-  ADC1->CR1 |= ADC1_CR1_ADON;
-  while (!(ADC1->CSR & ADC1_CSR_EOC));
-  res = ADC1->DRL;
-  res |= ADC1->DRH << 8;
+	union { uint8_t res8[2]; uint16_t res16; } res;
+	ADC1->CR1 &= ~ADC1_CR1_ADON;
+	ADC1->CSR = (u8)ch;
+	ADC1->CR1 |= ADC1_CR1_ADON;
+	for (res.res8[0] = 0; res.res8[0] != ADC_STAB_TIME; res.res8[0]++)
+		asm("nop");
+	ADC1->CR1 |= ADC1_CR1_ADON;
+	while (!(ADC1->CSR & ADC1_CSR_EOC));
+	ADC1->CSR &= ~ADC1_CSR_EOC;
+	res.res8[1] = ADC1->DRL;
+	res.res8[0] = ADC1->DRH;
 
-  return res;
+	return res.res16;
 }
