@@ -42,25 +42,38 @@
  * Pavel Nadein <pavel.nadein@gmail.com>
  */
 
-#ifndef STM8S_DELAY_H
-#define STM8S_DELAY_H
+#ifndef STM8S_ADC_H
+#define STM8S_ADC_H
 
 #include "stm8s.h"
 
-enum tin4_prescaler
+enum adc_channel
 {
-  TIM4_PRESCALER_1	= ((uint8_t)0x00),
-  TIM4_PRESCALER_2	= ((uint8_t)0x01),
-  TIM4_PRESCALER_4	= ((uint8_t)0x02),
-  TIM4_PRESCALER_8	= ((uint8_t)0x03),
-  TIM4_PRESCALER_16	= ((uint8_t)0x04),
-  TIM4_PRESCALER_32	= ((uint8_t)0x05),
-  TIM4_PRESCALER_64	= ((uint8_t)0x06),
-  TIM4_PRESCALER_128	= ((uint8_t)0x07),
+	ADC1_CHANNEL_0 = 0,
+	ADC1_CHANNEL_1 = 1,
+	ADC1_CHANNEL_2 = 2,
+	ADC1_CHANNEL_3 = 3,
+	ADC1_CHANNEL_4 = 4,
+	ADC1_CHANNEL_5 = 5,
+	ADC1_CHANNEL_6 = 6,
+	ADC1_CHANNEL_7 = 7,
+	ADC1_CHANNEL_8 = 8,
+	ADC1_CHANNEL_9 = 9,
 };
 
-void delays_init (enum tin4_prescaler pr);
-void delay_us (u8 us);
-void delay_ms (u16 ms);
+enum adc_prescaler
+{
+	ADC1_PRESSEL_FCPU_D2  = 0x00, /**< fADC1 = fcpu/2 */
+	ADC1_PRESSEL_FCPU_D3  = 0x10, /**< fADC1 = fcpu/3 */
+	ADC1_PRESSEL_FCPU_D4  = 0x20, /**< fADC1 = fcpu/4 */
+	ADC1_PRESSEL_FCPU_D6  = 0x30, /**< fADC1 = fcpu/6 */
+	ADC1_PRESSEL_FCPU_D8  = 0x40, /**< fADC1 = fcpu/8 */
+	ADC1_PRESSEL_FCPU_D10 = 0x50, /**< fADC1 = fcpu/10 */
+	ADC1_PRESSEL_FCPU_D12 = 0x60, /**< fADC1 = fcpu/12 */
+	ADC1_PRESSEL_FCPU_D18 = 0x70, /**< fADC1 = fcpu/18 */
+};
 
-#endif // STM8S_DELAY_H
+void adc_init (enum adc_channel ch, enum adc_prescaler pr);
+uint16_t adc_read (enum adc_channel ch);
+
+#endif // STM8S_ADC_H
