@@ -42,25 +42,17 @@
  * Pavel Nadein <pavelnadein@gmail.com>
  */
 
-#ifndef STM8S_DELAY_H
-#define STM8S_DELAY_H
+#ifndef STM8S_MEM_H
+#define STM8S_MEM_H
 
 #include "stm8s.h"
 
-enum tin4_prescaler
-{
-  TIM4_PRESCALER_1	= ((uint8_t)0x00),
-  TIM4_PRESCALER_2	= ((uint8_t)0x01),
-  TIM4_PRESCALER_4	= ((uint8_t)0x02),
-  TIM4_PRESCALER_8	= ((uint8_t)0x03),
-  TIM4_PRESCALER_16	= ((uint8_t)0x04),
-  TIM4_PRESCALER_32	= ((uint8_t)0x05),
-  TIM4_PRESCALER_64	= ((uint8_t)0x06),
-  TIM4_PRESCALER_128	= ((uint8_t)0x07),
+enum mem {
+    FLASH_MEMTYPE_PROG      = (uint8_t)0xFD, /*!< Program memory */
+    FLASH_MEMTYPE_DATA      = (uint8_t)0xF7  /*!< Data EEPROM memory */
 };
 
-void delays_init (enum tin4_prescaler pr);
-void delay_us (u8 us);
-void delay_ms (u16 ms);
+uint16_t eeprom_write(uint16_t offset, uint8_t *buf, uint16_t size);
+uint16_t eeprom_read(uint16_t offset, uint8_t *buf, uint16_t size);
 
-#endif // STM8S_DELAY_H
+#endif // STM8S_MEM_H

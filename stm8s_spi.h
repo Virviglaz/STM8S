@@ -39,7 +39,7 @@
  * STM8S open source driver
  *
  * Contact Information:
- * Pavel Nadein <pavel.nadein@gmail.com>
+ * Pavel Nadein <pavelnadein@gmail.com>
  */
 
 #ifndef STM8S_SPI_H

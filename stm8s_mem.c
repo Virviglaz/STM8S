@@ -42,25 +42,74 @@
  * Pavel Nadein <pavelnadein@gmail.com>
  */
 
-#ifndef STM8S_DELAY_H
-#define STM8S_DELAY_H
+#include "stm8s_mem.h"
 
-#include "stm8s.h"
+#define EEPROM_START_ADDRESS	0x4000
+#define EEPROM_END_ADDRESS   	0x427F
+#define EEPROM_SIZE		(EEPROM_END_ADDRESS - EEPROM_START_ADDRESS)
+#define FLASH_BLOCK_SIZE	64
 
-enum tin4_prescaler
+#define FLASH_RASS_KEY1 ((uint8_t)0x56) /*!< First RASS key */
+#define FLASH_RASS_KEY2 ((uint8_t)0xAE) /*!< Second RASS key */
+
+#define OPTION_BYTE_START_PHYSICAL_ADDRESS  ((uint16_t)0x4800)
+#define OPTION_BYTE_END_PHYSICAL_ADDRESS    ((uint16_t)0x487F)
+#define FLASH_OPTIONBYTE_ERROR              ((uint16_t)0x5555)
+
+static void mem_unlock(enum mem memory)
 {
-  TIM4_PRESCALER_1	= ((uint8_t)0x00),
-  TIM4_PRESCALER_2	= ((uint8_t)0x01),
-  TIM4_PRESCALER_4	= ((uint8_t)0x02),
-  TIM4_PRESCALER_8	= ((uint8_t)0x03),
-  TIM4_PRESCALER_16	= ((uint8_t)0x04),
-  TIM4_PRESCALER_32	= ((uint8_t)0x05),
-  TIM4_PRESCALER_64	= ((uint8_t)0x06),
-  TIM4_PRESCALER_128	= ((uint8_t)0x07),
-};
+	if (memory == FLASH_MEMTYPE_PROG) {
+		FLASH->PUKR = FLASH_RASS_KEY1;
+    		FLASH->PUKR = FLASH_RASS_KEY2;
+	} else {
+		FLASH->DUKR = FLASH_RASS_KEY2;
+		FLASH->DUKR = FLASH_RASS_KEY1;
+	}
+}
 
-void delays_init (enum tin4_prescaler pr);
-void delay_us (u8 us);
-void delay_ms (u16 ms);
+static void mem_lock(enum mem memory)
+{
+	FLASH->IAPSR &= (uint8_t)memory;
+}
 
-#endif // STM8S_DELAY_H
+/**
+  * @brief  Write buffer to EEPROM.
+  * @param  offset: Offset from beginning of EEPROM
+  * @param  buf: Pointer to beginning of buffer
+  * @param  size: Number of bytes to write
+  * @retval uint16_t: number of bytes that was not written
+  */
+uint16_t eeprom_write(uint16_t offset, uint8_t *buf, uint16_t size)
+{
+	uint8_t *p = buf + EEPROM_START_ADDRESS;
+
+	mem_unlock(FLASH_MEMTYPE_DATA);
+
+	while ((uint16_t)p < EEPROM_END_ADDRESS && size) {
+		*p++ = *buf++;
+		size--;
+	};
+
+	mem_lock(FLASH_MEMTYPE_DATA);
+
+	return size;
+}
+
+/**
+  * @brief  Read data from EEPROM to buffer.
+  * @param  offset: Offset from beginning of EEPROM
+  * @param  buf: Pointer to beginning of buffer
+  * @param  size: Number of bytes to read
+  * @retval uint16_t: number of bytes that was not read
+  */
+uint16_t eeprom_read(uint16_t offset, uint8_t *buf, uint16_t size)
+{
+	uint8_t *p = buf + EEPROM_START_ADDRESS;
+
+	while ((uint16_t)p < EEPROM_END_ADDRESS && size) {
+		*buf++ = *p++;
+		size--;
+	};
+
+	return size;
+}
