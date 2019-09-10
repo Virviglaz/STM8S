@@ -76,9 +76,9 @@ uint16_t adc_read (enum adc_channel ch)
 		asm("nop");
 	ADC1->CR1 |= ADC1_CR1_ADON;
 	while (!(ADC1->CSR & ADC1_CSR_EOC));
-	ADC1->CSR &= ~ADC1_CSR_EOC;
 	res.res8[1] = ADC1->DRL;
 	res.res8[0] = ADC1->DRH;
+	ADC1->CSR &= ~ADC1_CSR_EOC;
 
 	return res.res16;
 }
