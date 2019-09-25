@@ -43,17 +43,19 @@
  */
 
 #include "stm8s_delay.h"
+#include "stm8s_clk.h"
 
 /**
   * @brief  Init TIM4 to be used for delay functions.
   * @param  ch: enum tin4_prescaler main clock devider
   * @retval none
   */
-void delays_init (enum tin4_prescaler pr)
+void delays_init (void)
 {
   CLK->PCKENR1 |= CLK_PCKENR1_TIM4;
-  TIM4->PSCR = (u8)pr;
+  TIM4->PSCR = clk_get_freq_MHz() >> 2;
   TIM4->EGR |= TIM4_EGR_UG;
+  TIM4->SR1 = 0;
   TIM4->CR1 = TIM4_CR1_CEN;
 }
 
