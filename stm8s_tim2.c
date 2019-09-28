@@ -42,26 +42,64 @@
  * Pavel Nadein <pavelnadein@gmail.com>
  */
 
-#ifndef STM8S_CLK_H
-#define STM8S_CLK_H
+#include "stm8s_tim2.h"
 
-#include "stm8s.h"
+static void (*tim2_irq_handler)(void);
 
-#define HSI_16MHZ	CLK_NO_DIV
-#define HSI_8MHZ	CLK_DIV_2
-#define HSI_4MHZ	CLK_DIV_4
-#define HSI_2MHZ	CLK_DIV_8
-
-enum clk_div
+void tim2_init(enum tim2_presc prescaler, u16 period)
 {
-	CLK_NO_DIV = 0,
-	CLK_DIV_2 = 1,
-	CLK_DIV_4 = 2,
-	CLK_DIV_8 = 3,
-};
+	CLK->PCKENR1 |= CLK_PCKENR1_TIM2;
+	TIM2->PSCR = prescaler;
+	TIM2->ARRH = (u8)(period >> 8);
+	TIM2->ARRL = (u8)(prescaler);
+	TIM2->EGR |= TIM2_EGR_UG;
+	TIM2->CR1 |= TIM2_CR1_CEN;
+}
 
-void clk_set(enum clk_div clk);
-enum clk_div clk_get(void);
-u8 clk_get_freq_MHz(void);
+void tim2_enable_irq(void (*handler)(void))
+{
+	tim2_irq_handler = handler;
 
-#endif /* STM8S_CLK_H */
+	if (handler)
+		TIM2->IER = TIM2_IER_UIE;
+	else
+		TIM2->IER = 0;
+}
+
+void tim2_enable(bool enabled)
+{
+	if (enabled)
+		TIM2->CR1 |= TIM2_CR1_CEN;
+	else
+		TIM2->CR1 &= ~TIM2_CR1_CEN;
+}
+
+void tim2_pwm_init(enum tim2_pwm ch, u16 duty)
+{
+	switch(ch) {
+	case TIM2_PWM1:
+		TIM2->CCER1 |= TIM2_CCER1_CC1E;
+		TIM2->CCMR1 = 0x60; /* PWM1, no preload */
+  		TIM2->CCR1H = (u8)(duty >> 8);
+  		TIM2->CCR1L = (u8)(duty);
+		break;
+	case TIM2_PWM2:
+		TIM2->CCER1 |= TIM2_CCER1_CC2E;
+		TIM2->CCMR2 = 0x60; /* PWM1, no preload */
+  		TIM2->CCR2H = (u8)(duty >> 8);
+  		TIM2->CCR2L = (u8)(duty);
+		break;
+	case TIM2_PWM3:
+		TIM2->CCER2 |= TIM2_CCER2_CC3E;
+		TIM2->CCMR3 = 0x60; /* PWM1, no preload */
+  		TIM2->CCR3H = (u8)(duty >> 8);
+  		TIM2->CCR3L = (u8)(duty);
+		break;
+	}
+}
+
+INTERRUPT_HANDLER(TIM2_UPD_OVF_BRK_IRQHandler, 13)
+{
+	tim2_irq_handler();
+	TIM2->SR1 &= ~TIM2_SR1_UIF;
+}

@@ -42,26 +42,33 @@
  * Pavel Nadein <pavelnadein@gmail.com>
  */
 
-#ifndef STM8S_CLK_H
-#define STM8S_CLK_H
+#ifndef STM8S_TIM2_H
+#define STM8S_TIM2_H
 
 #include "stm8s.h"
 
-#define HSI_16MHZ	CLK_NO_DIV
-#define HSI_8MHZ	CLK_DIV_2
-#define HSI_4MHZ	CLK_DIV_4
-#define HSI_2MHZ	CLK_DIV_8
-
-enum clk_div
+enum tim2_presc
 {
-	CLK_NO_DIV = 0,
-	CLK_DIV_2 = 1,
-	CLK_DIV_4 = 2,
-	CLK_DIV_8 = 3,
+	TIM2_HSI_DIV_2,
+	TIM2_HSI_DIV_4,
+	TIM2_HSI_DIV_8,
+	TIM2_HSI_DIV_16,
+	TIM2_HSI_DIV_32,
+	TIM2_HSI_DIV_64,
+	TIM2_HSI_DIV_128,
+	TIM2_HSI_DIV_256,
 };
 
-void clk_set(enum clk_div clk);
-enum clk_div clk_get(void);
-u8 clk_get_freq_MHz(void);
+enum tim2_pwm
+{
+	TIM2_PWM1,
+	TIM2_PWM2,
+	TIM2_PWM3,
+};
 
-#endif /* STM8S_CLK_H */
+void tim2_init(enum tim2_presc prescaler, u16 period);
+void tim2_enable_irq(void (*handler)(void));
+void tim2_enable(bool enabled);
+void tim2_pwm_init(enum tim2_pwm ch, u16 duty);
+
+#endif /* STM8S_TIM2_H */
