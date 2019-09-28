@@ -70,5 +70,6 @@ void tim2_init(enum tim2_presc prescaler, u16 period);
 void tim2_enable_irq(void (*handler)(void));
 void tim2_enable(bool enabled);
 void tim2_pwm_init(enum tim2_pwm ch, u16 duty);
+void tim2_pwm_set(enum tim2_pwm ch, u8 percentage);
 
 #endif /* STM8S_TIM2_H */

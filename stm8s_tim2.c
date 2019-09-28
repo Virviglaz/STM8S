@@ -98,6 +98,15 @@ void tim2_pwm_init(enum tim2_pwm ch, u16 duty)
 	}
 }
 
+void tim2_pwm_set(enum tim2_pwm ch, u8 percentage)
+{
+	u32 reload = TIM2->ARRH << 8;
+	reload |= TIM2->ARRL;
+	reload *= percentage;
+	reload /= 100;
+	tim2_pwm_init(ch, reload);
+}
+
 INTERRUPT_HANDLER(TIM2_UPD_OVF_BRK_IRQHandler, 13)
 {
 	tim2_irq_handler();
