@@ -48,7 +48,7 @@
 #include "stm8s.h"
 #include "stm8s_gpio.h"
 
-enum spi_clock { SPI_CLOCK_LOW, SPI_CLOCK_HIGH };
+enum spi_clock { SPI_CLOCK_LOW = 0, SPI_CLOCK_HIGH = 0x02 | 0x01 };
 enum spi_freq {
 	CLOCK_DEV_2 = 0x00,
 	CLOCK_DEV_4 = 0x08,

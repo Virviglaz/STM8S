@@ -48,8 +48,7 @@ void spi_init(enum spi_clock clock, enum spi_freq freq)
 {
 	CLK->PCKENR1 |= CLK_PCKENR1_SPI;
 	SPI->CR2 = SPI_CR2_SSI | SPI_CR2_SSM;
-	SPI->CR1 = SPI_CR1_SPE | SPI_CR1_MSTR | (u8)freq | \
-		(clock == SPI_CLOCK_HIGH ? (SPI_CR1_CPOL | SPI_CR1_CPHA) : 0);
+	SPI->CR1 = SPI_CR1_SPE | SPI_CR1_MSTR | (u8)freq | (u8)clock;
 }
 
 u8 spi_read(u8 value)
