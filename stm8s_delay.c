@@ -53,7 +53,7 @@
 void delays_init (void)
 {
   CLK->PCKENR1 |= CLK_PCKENR1_TIM4;
-  TIM4->PSCR = clk_get_freq_MHz() >> 2;
+  TIM4->PSCR = (clk_get_freq_MHz() >> 2) & 0x07;
   TIM4->EGR |= TIM4_EGR_UG;
   TIM4->SR1 = 0;
   TIM4->CR1 = TIM4_CR1_CEN;

@@ -125,8 +125,7 @@ void gpio_init(GPIO_TypeDef *gpio, enum gpio_pin pin, enum gpio_dir dir)
 		gpio_set_output(gpio, pin, PUSH_PULL);
 		gpio_set_speed(gpio, pin, SPEED_2MHz);
 		gpio_reset(gpio, pin);
-	}
-	else {
+	} else {
 		gpio_pullup(gpio, pin, false);
 		gpio_irq(gpio, pin, false);
 	}
