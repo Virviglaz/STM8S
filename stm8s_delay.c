@@ -45,18 +45,22 @@
 #include "stm8s_delay.h"
 #include "stm8s_clk.h"
 
+const static struct delay _delay = { delay_ms, delay_us };
+
 /**
   * @brief  Init TIM4 to be used for delay functions.
   * @param  ch: enum tin4_prescaler main clock devider
   * @retval none
   */
-void delays_init (void)
+const struct delay *delays_init (void)
 {
-  CLK->PCKENR1 |= CLK_PCKENR1_TIM4;
-  TIM4->PSCR = (clk_get_freq_MHz() >> 2) & 0x07;
-  TIM4->EGR |= TIM4_EGR_UG;
-  TIM4->SR1 = 0;
-  TIM4->CR1 = TIM4_CR1_CEN;
+	CLK->PCKENR1 |= CLK_PCKENR1_TIM4;
+	TIM4->PSCR = (clk_get_freq_MHz() >> 2) & 0x07;
+	TIM4->EGR |= TIM4_EGR_UG;
+	TIM4->SR1 = 0;
+	TIM4->CR1 = TIM4_CR1_CEN;
+
+	return &_delay;
 }
 
 /**
@@ -66,8 +70,8 @@ void delays_init (void)
   */
 void delay_us (u8 us)
 {
-  TIM4->CNTR = 0;
-  while (TIM4->CNTR < us);
+	TIM4->CNTR = 0;
+	while (TIM4->CNTR < us);
 }
 
 /**
@@ -77,7 +81,7 @@ void delay_us (u8 us)
   */
 void delay_ms (u16 ms)
 {
-  ms = ms << 2;
-  while (ms--) delay_us(250);
+	ms = ms << 2;
+	while (ms--) delay_us(250);
 }
 
