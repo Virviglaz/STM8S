@@ -124,7 +124,7 @@ enum gpio_dir { INPUT, OUTPUT };
 enum gpio_speed { SPEED_2MHz, SPEED_10MHz };
 enum gpio_output_type { OPEN_DRAIN, PUSH_PULL };
 
-typedef struct { GPIO_TypeDef *gpio; enum gpio_pin pin; } gpio_pin;
+typedef struct { GPIO_TypeDef *gpio; enum gpio_pin pin; } io_pin;
 
 void gpio_set_dir(GPIO_TypeDef *gpio, enum gpio_pin pin, enum gpio_dir dir);
 void gpio_set_output(GPIO_TypeDef *gpio, enum gpio_pin pin,
