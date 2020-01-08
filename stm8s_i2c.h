@@ -4,7 +4,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2019 Pavel Nadein
+ * Copyright (c) 2020 Pavel Nadein
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -42,20 +42,15 @@
  * Pavel Nadein <pavelnadein@gmail.com>
  */
 
-#include "stm8s_clk.h"
+#ifndef STM8S_I2C_H
+#define STM8S_I2C_H
 
-void clk_set(enum clk_div clk)
-{
-	CLK->CKDIVR = ((u8)clk & 3) << 3;
-}
+#define I2C_ERR_BUSY		10
+#define I2C_ERR_NACK		20
 
-enum clk_div clk_get(void)
-{
-	return (enum clk_div)(CLK->CKDIVR >> 3);
-}
+#include "stm8s.h"
 
-u8 clk_get_freq_MHz(void)
-{
-	const u8 freqs[] = { 16, 8, 4, 2 };
-	return freqs[ (CLK->CKDIVR >> 3) & 3 ];
-}
+u8 i2c_write_reg(u8 addr, u8 reg, u8 *buf, u16 size);
+u8 i2c_read_reg(u8 addr, u8 reg, u8 *buf, u16 size);
+
+#endif /* STM8S_I2C_H */
