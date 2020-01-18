@@ -52,5 +52,7 @@
 
 u8 i2c_write_reg(u8 addr, u8 reg, u8 *buf, u16 size);
 u8 i2c_read_reg(u8 addr, u8 reg, u8 *buf, u16 size);
+void i2c_slave(u8 addr, u8 **buf, u8 size);
+u8 i2c_slave_check_data(u8 *buf_num);
 
 #endif /* STM8S_I2C_H */

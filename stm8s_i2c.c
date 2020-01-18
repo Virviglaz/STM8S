@@ -45,6 +45,14 @@
 #include "stm8s_i2c.h"
 #include "stm8s_clk.h"
 
+static struct {
+	u8 **buf;
+	u8 size;
+	u8 rdy; /* Data ready flag */
+	u8 upd_buf; /* Last updated buffer */
+	u8 bytes_rcv;
+} _i2c_slave;
+
 static void i2c_stop(void)
 {
 	I2C->CR2 |= I2C_CR2_STOP;
@@ -69,19 +77,30 @@ static u8 try_recover(void)
 	return I2C->SR3 & I2C_SR3_BUSY;
 }
 
-static u8 i2c_start(void)
+static void gpio_setup(void)
 {
-	/* CCR = Fmaster / 2 * Fiic */
-	u16 ccr = clk_get_freq_MHz();
 	GPIOB->DDR &= ~(3 << 4);
 	GPIOB->ODR |= (3 << 4);
 	GPIOB->CR1 &= ~(3 << 4);
 	GPIOB->CR2 &= ~(3 << 4);
+}
 
+static void clk_setup(void)
+{
+	/* CCR = Fmaster / 2 * Fiic */
+	u16 ccr = clk_get_freq_MHz();
 	I2C->FREQR = (u8)ccr;
+	I2C->TRISER = ccr + 1;
 	ccr = ccr * 5;
 	I2C->CCRL = (u8)ccr;
 	I2C->CCRH = ccr >> 8;
+}
+
+static u8 i2c_start(void)
+{
+	gpio_setup();
+	clk_setup();
+
 	I2C->CR1 = I2C_CR1_PE;
 
 	if (I2C->SR3 & I2C_SR3_BUSY) {
@@ -201,4 +220,62 @@ u8 i2c_read_reg(u8 addr, u8 reg, u8 *buf, u16 size)
 noack:
 	i2c_stop();
 	return I2C_ERR_NACK;
+}
+
+void i2c_slave(u8 addr, u8 **buf, u8 size)
+{
+	_i2c_slave.buf = buf;
+	_i2c_slave.size = size;
+
+	clk_setup();
+	I2C->OARL = addr << 1;
+	I2C->OARH = I2C_OARH_ADDCONF;
+	I2C->ITR = I2C_ITR_ITBUFEN | I2C_ITR_ITEVTEN;
+	I2C->CR1 = I2C_CR1_PE;
+	I2C->CR2 |= I2C_CR2_ACK;
+	enableInterrupts();
+}
+
+INTERRUPT_HANDLER(I2C_IRQHandler, 19)
+{
+	static u8 index_set = 0, i, num;
+	if (I2C->SR1 & I2C_SR1_ADDR) {
+		/* Address match */
+		I2C->CR2 |= I2C_CR2_ACK;
+		index_set = 0;
+		num = 0;
+
+	} else if (I2C->SR1 & I2C_SR1_RXNE) {
+		/* Data received */
+		if (!index_set) {
+			index_set = !0;
+			i = I2C->DR;
+			if (i >= _i2c_slave.size)
+				i = _i2c_slave.size - 1;
+		} else {
+			_i2c_slave.buf[i][num++] = I2C->DR;
+		}
+	} else if (I2C->SR1 & I2C_SR1_STOPF) {
+		/* Stop condition */
+		_i2c_slave.rdy = !0;
+		_i2c_slave.upd_buf = i;
+		_i2c_slave.bytes_rcv = num;
+	} else {
+		/* Reading the slave */
+		I2C->DR = _i2c_slave.buf[i][num++];
+	}
+
+	I2C->SR3;
+}
+
+/* Returns number of bytes received last time */
+u8 i2c_slave_check_data(u8 *buf_num)
+{
+	if (!_i2c_slave.rdy)
+		return 0;
+
+	if (buf_num)
+		*buf_num = _i2c_slave.upd_buf;
+
+	return _i2c_slave.bytes_rcv;
 }
