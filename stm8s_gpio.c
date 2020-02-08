@@ -76,6 +76,12 @@ void gpio_reset(GPIO_TypeDef *gpio, enum gpio_pin pin)
 	gpio->ODR &= ~(u8)pin;
 }
 
+/* Invert pin state */
+u8 gpio_inv(GPIO_TypeDef *gpio, enum gpio_pin pin)
+{
+	return gpio->ODR ^= pin;
+}
+
 /* Set pin value to state (true/false == 1/0) */
 void gpio_pin_switch(GPIO_TypeDef *gpio, enum gpio_pin pin, bool state)
 {

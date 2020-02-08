@@ -132,6 +132,7 @@ void gpio_set_output(GPIO_TypeDef *gpio, enum gpio_pin pin,
 enum gpio_dir gpio_get_dir(GPIO_TypeDef *gpio, enum gpio_pin pin);
 void gpio_set(GPIO_TypeDef *gpio, enum gpio_pin pin);
 void gpio_reset(GPIO_TypeDef *gpio, enum gpio_pin pin);
+u8 gpio_inv(GPIO_TypeDef *gpio, enum gpio_pin pin);
 void gpio_pin_switch(GPIO_TypeDef *gpio, enum gpio_pin pin, bool state);
 u8 gpio_get_latch(GPIO_TypeDef *gpio, enum gpio_pin pin);
 u8 gpio_get_value(GPIO_TypeDef *gpio, enum gpio_pin pin);
