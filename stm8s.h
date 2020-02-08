@@ -28,6 +28,8 @@
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(*x))
 
+#define assert_param(x)	(void)x
+
 /** @addtogroup STM8S_StdPeriph_Driver
   * @{
   */
