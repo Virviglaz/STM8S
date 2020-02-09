@@ -4,7 +4,7 @@
  *
  *   MIT License
  *
- *   Copyright (c) 2019 Pavel Nadein
+ *   Copyright (c) 2020 Pavel Nadein
  *
  *   Permission is hereby granted, free of charge, to any person obtaining a copy
  *   of this software and associated documentation files (the "Software"), to deal
@@ -42,35 +42,49 @@
  * Pavel Nadein <pavelnadein@gmail.com>
  */
 
-#ifndef STM8S_TIM2_H
-#define STM8S_TIM2_H
+#include "stm8s_tim1.h"
 
-#include "stm8s.h"
+static void (*tim1_irq_handler)(void);
 
-enum tim2_presc
+/* NOTE: timer frequency == CPU freq / (2 * prescaler) */
+
+void tim1_init(u16 prescaler, u16 period)
 {
-	TIM2_HSI_DIV_2,
-	TIM2_HSI_DIV_4,
-	TIM2_HSI_DIV_8,
-	TIM2_HSI_DIV_16,
-	TIM2_HSI_DIV_32,
-	TIM2_HSI_DIV_64,
-	TIM2_HSI_DIV_128,
-	TIM2_HSI_DIV_256,
-};
+	CLK->PCKENR1 |= CLK_PCKENR1_TIM1;
+	TIM1->CR1 = 0;
+	if (prescaler)
+		prescaler--;
+	TIM1->PSCRH = (u8)(prescaler >> 8);
+	TIM1->PSCRL = (u8)(prescaler);
+	TIM1->ARRH = (u8)(period >> 8);
+	TIM1->ARRL = (u8)(period);
+	TIM1->EGR = TIM1_EGR_UG;
+	TIM1->CR1 = TIM1_CR1_CEN;
+}
 
-enum tim2_pwm
+void tim1_set_freq(u16 period)
 {
-	TIM2_PWM1,
-	TIM2_PWM2,
-	TIM2_PWM3,
-};
+	TIM1->ARRH = (u8)(period >> 8);
+	TIM1->ARRL = (u8)(period);
+	TIM1->EGR = TIM1_EGR_UG;
+}
 
-void tim2_init(enum tim2_presc prescaler, u16 period);
-void tim2_set_freq(u16 period);
-void tim2_enable_irq(void (*handler)(void));
-void tim2_enable(bool enabled);
-void tim2_pwm_init(enum tim2_pwm ch, u16 duty);
-void tim2_pwm_set(enum tim2_pwm ch, u8 percentage);
+void tim1_enable_irq(void (*handler)(void))
+{
+	tim1_irq_handler = handler;
+	TIM1->IER = handler ? TIM1_IER_UIE : 0;
+}
 
-#endif /* STM8S_TIM2_H */
+void tim1_enable(bool enabled)
+{
+	if (enabled)
+		TIM1->CR1 |= TIM1_CR1_CEN;
+	else
+		TIM1->CR1 &= ~TIM1_CR1_CEN;
+}
+
+INTERRUPT_HANDLER(TIM1_UPD_OVF_TRG_BRK_IRQHandler, 11)
+{
+	tim1_irq_handler();
+	TIM1->SR1 &= ~TIM1_SR1_UIF;
+}

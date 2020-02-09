@@ -4,7 +4,7 @@
  *
  *   MIT License
  *
- *   Copyright (c) 2019 Pavel Nadein
+ *   Copyright (c) 2020 Pavel Nadein
  *
  *   Permission is hereby granted, free of charge, to any person obtaining a copy
  *   of this software and associated documentation files (the "Software"), to deal
@@ -42,35 +42,14 @@
  * Pavel Nadein <pavelnadein@gmail.com>
  */
 
-#ifndef STM8S_TIM2_H
-#define STM8S_TIM2_H
+#ifndef STM8S_TIM1_H
+#define STM8S_TIM1_H
 
 #include "stm8s.h"
 
-enum tim2_presc
-{
-	TIM2_HSI_DIV_2,
-	TIM2_HSI_DIV_4,
-	TIM2_HSI_DIV_8,
-	TIM2_HSI_DIV_16,
-	TIM2_HSI_DIV_32,
-	TIM2_HSI_DIV_64,
-	TIM2_HSI_DIV_128,
-	TIM2_HSI_DIV_256,
-};
+void tim1_init(u16 prescaler, u16 period);
+void tim1_set_freq(u16 period);
+void tim1_enable_irq(void (*handler)(void));
+void tim1_enable(bool enabled);
 
-enum tim2_pwm
-{
-	TIM2_PWM1,
-	TIM2_PWM2,
-	TIM2_PWM3,
-};
-
-void tim2_init(enum tim2_presc prescaler, u16 period);
-void tim2_set_freq(u16 period);
-void tim2_enable_irq(void (*handler)(void));
-void tim2_enable(bool enabled);
-void tim2_pwm_init(enum tim2_pwm ch, u16 duty);
-void tim2_pwm_set(enum tim2_pwm ch, u8 percentage);
-
-#endif /* STM8S_TIM2_H */
+#endif /* STM8S_TIM1_H */

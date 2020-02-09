@@ -46,24 +46,30 @@
 
 static void (*tim2_irq_handler)(void);
 
+/* NOTE: timer frequency == CPU freq / (2 * prescaler) */
+
 void tim2_init(enum tim2_presc prescaler, u16 period)
 {
 	CLK->PCKENR1 |= CLK_PCKENR1_TIM2;
-	TIM2->PSCR = prescaler;
+	TIM2->CR1 = 0;
+	TIM2->PSCR = (u8)prescaler;
 	TIM2->ARRH = (u8)(period >> 8);
-	TIM2->ARRL = (u8)(prescaler);
+	TIM2->ARRL = (u8)(period);
 	TIM2->EGR |= TIM2_EGR_UG;
 	TIM2->CR1 |= TIM2_CR1_CEN;
+}
+
+void tim2_set_freq(u16 period)
+{
+	TIM2->ARRH = (u8)(period >> 8);
+	TIM2->ARRL = (u8)(period);
+	TIM2->EGR |= TIM2_EGR_UG;
 }
 
 void tim2_enable_irq(void (*handler)(void))
 {
 	tim2_irq_handler = handler;
-
-	if (handler)
-		TIM2->IER = TIM2_IER_UIE;
-	else
-		TIM2->IER = 0;
+	TIM2->IER = handler ? TIM2_IER_UIE : 0;
 }
 
 void tim2_enable(bool enabled)
