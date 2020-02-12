@@ -88,3 +88,50 @@ INTERRUPT_HANDLER(TIM1_UPD_OVF_TRG_BRK_IRQHandler, 11)
 	tim1_irq_handler();
 	TIM1->SR1 &= ~TIM1_SR1_UIF;
 }
+
+void pwm_enable(enum stepper_ch ch, u16 duty)
+{
+	switch (ch) {
+	case STP_CH1:
+		/* PC6 */
+		OPT->OPT2 = 1;
+		GPIOC->DDR |= 1 << 6;
+		GPIOC->CR1 |= 1 << 6;
+		GPIOC->CR2 |= 1 << 6;
+		TIM1->CCMR1 = (7 << 4) | TIM1_CCMR_OCxPE;
+		TIM1->CCER1 = TIM1_CCER1_CC1E | TIM1_CCER1_CC1P;
+		TIM1->CCR1H = (u8)(duty >> 8);
+		TIM1->CCR1L = (u8)duty;
+		break;
+	case STP_CH2:
+		/* PC5 */
+		OPT->OPT2 = 1;
+		GPIOC->DDR |= 1 << 5;
+		GPIOC->CR1 |= 1 << 5;
+		GPIOC->CR2 |= 1 << 5;
+		TIM1->CCMR2 = (7 << 4) | TIM1_CCMR_OCxPE;
+		TIM1->CCER2 = TIM1_CCER2_CC3E | TIM1_CCER2_CC3P;
+		TIM1->CCR2H = (u8)(duty >> 8);
+		TIM1->CCR2L = (u8)duty;
+		break;
+	case STP_CH3:
+		/* NOT USED IN TSOP20 */
+		break;
+	case STP_CH4:
+		/* PC4 */
+		GPIOC->DDR |= 1 << 4;
+		GPIOC->CR1 |= 1 << 4;
+		GPIOC->CR2 |= 1 << 4;
+		TIM1->CCMR4 = (7 << 4) | TIM1_CCMR_OCxPE;
+		TIM1->CCER2 = TIM1_CCER2_CC4E | TIM1_CCER2_CC4P;
+		TIM1->CCR4H = (u8)(duty >> 8);
+		TIM1->CCR4L = (u8)duty;
+		break;
+	}
+
+	TIM1->RCR = 0;
+	TIM1->BKR = TIM1_BKR_MOE;
+	TIM1->IER = TIM1_IER_UIE;
+	TIM1->EGR = TIM1_EGR_UG;
+	TIM1->CR1 = TIM1_CR1_CEN;
+}

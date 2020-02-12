@@ -47,9 +47,17 @@
 
 #include "stm8s.h"
 
+enum stepper_ch {
+	STP_CH1,
+	STP_CH2,
+	STP_CH3,
+	STP_CH4,
+};
+
 void tim1_init(u16 prescaler, u16 period);
 void tim1_set_freq(u16 period);
 void tim1_enable_irq(void (*handler)(void));
 void tim1_enable(bool enabled);
+void pwm_enable(enum stepper_ch ch, u16 duty);
 
 #endif /* STM8S_TIM1_H */
