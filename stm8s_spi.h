@@ -4,7 +4,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2019 Pavel Nadein
+ * Copyright (c) 2020 Pavel Nadein
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -67,4 +67,4 @@ u8 spi_write_reg(GPIO_TypeDef *gpio, enum gpio_pin pin,
 u8 spi_read_reg(GPIO_TypeDef *gpio, enum gpio_pin pin,
 		 u8 reg, u8 *buf, u16 size);
 
-#endif // STM8S_SPI_H
+#endif /* STM8S_SPI_H */

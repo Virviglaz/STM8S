@@ -4,7 +4,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2019 Pavel Nadein
+ * Copyright (c) 2020 Pavel Nadein
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -55,4 +55,4 @@ enum mem {
 uint16_t eeprom_write(uint16_t offset, uint8_t *buf, uint16_t size);
 uint16_t eeprom_read(uint16_t offset, uint8_t *buf, uint16_t size);
 
-#endif // STM8S_MEM_H
+#endif /* STM8S_MEM_H */

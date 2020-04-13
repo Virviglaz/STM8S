@@ -4,7 +4,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2019 Pavel Nadein
+ * Copyright (c) 2020 Pavel Nadein
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -56,4 +56,4 @@ void delays_init(void);
 void delay_us (u8 us);
 void delay_ms (u16 ms);
 
-#endif // STM8S_DELAY_H
+#endif /* STM8S_DELAY_H */
