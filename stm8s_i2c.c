@@ -53,15 +53,18 @@ static struct {
 	u8 bytes_rcv;
 } _i2c_slave;
 
-static void i2c_stop(void)
+static inline void stop(void)
 {
 	I2C->CR2 |= I2C_CR2_STOP;
 	while (I2C->SR1 & I2C_SR1_STOPF);
 }
 
+u16 i2c_error_counter = 0;
 static u8 inline try_recover(void)
 {
 	u16 i = 0xFFFF;
+	if (i2c_error_counter < 0xFFFF)
+		i2c_error_counter++;
 
 	I2C->CR1 &= ~I2C_CR1_PE;
 	GPIOB->DDR |= (3 << 4);
@@ -71,7 +74,7 @@ static u8 inline try_recover(void)
 	GPIOB->ODR |= (3 << 4);
 	I2C->CR1 = I2C_CR1_PE;
 
-	i2c_stop();
+	stop();
 	return I2C->SR3 & I2C_SR3_BUSY;
 }
 
@@ -83,7 +86,7 @@ static inline void gpio_setup(void)
 	GPIOB->CR2 &= ~(3 << 4);
 }
 
-static void clk_setup(void)
+static inline void clk_setup(void)
 {
 	/* CCR = Fmaster / 2 * Fiic */
 	u16 ccr = clk_get_freq_MHz();
@@ -96,11 +99,12 @@ static void clk_setup(void)
 	I2C->CR1 = I2C_CR1_PE;
 }
 
-static u8 i2c_start(void)
+static u8 start(void)
 {
 	if (!(CLK->PCKENR1 & CLK_PCKENR1_I2C) || !(I2C->CR1 & I2C_CR1_PE)) {
 		gpio_setup();
 		clk_setup();
+		stop();
 	}
 
 	if (I2C->SR3 & I2C_SR3_BUSY) {
@@ -116,13 +120,13 @@ static u8 i2c_start(void)
 	return 0;
 }
 
-static inline void i2c_restart(void)
+static inline void restart(void)
 {
 	I2C->CR2 = I2C_CR2_START;
 	while (!(I2C->SR1 & I2C_SR1_SB));
 }
 
-static u8 i2c_addr(u8 addr)
+static inline u8 send_addr(u8 addr)
 {
 	I2C->DR = addr;
 	while (!(I2C->SR1 & I2C_SR1_ADDR))
@@ -135,7 +139,7 @@ static u8 i2c_addr(u8 addr)
 	return 0;
 }
 
-static void i2c_write(u8 data)
+static inline void i2c_write(u8 data)
 {
 	while (!(I2C->SR1 & I2C_SR1_TXE));
 	I2C->DR = data;
@@ -144,30 +148,32 @@ static void i2c_write(u8 data)
 u8 i2c_write_reg(u8 addr, u8 reg, u8 *buf, u16 size)
 {
 	u8 ret;
-	if (i2c_start())
+	if (start())
 		return I2C_ERR_BUSY;
 
-	ret = i2c_addr(addr << 1);
+	ret = send_addr(addr << 1);
 	if (!ret) {
 		i2c_write(reg);
 		while (size--)
 			i2c_write(*buf++);
 	}
 
-	i2c_stop();
+	while (!(I2C->SR1 & I2C_SR1_BTF));
+	stop();
 	return ret;
 }
 
 u8 i2c_read_reg(u8 addr, u8 reg, u8 *buf, u16 size)
 {
-	if (i2c_start())
+	if (start())
 		return I2C_ERR_BUSY;
 
-	if (i2c_addr(addr << 1))
+	if (send_addr(addr << 1))
 		goto noack;
 	i2c_write(reg);
-	i2c_restart();
-	if (i2c_addr((addr << 1) | 1))
+	restart();
+	I2C->CR2 |= I2C_CR2_ACK;
+	if (send_addr((addr << 1) | 1))
 		goto noack;
 
 	if (size == 1) {
@@ -192,7 +198,7 @@ u8 i2c_read_reg(u8 addr, u8 reg, u8 *buf, u16 size)
 		enableInterrupts();
 		*buf++ = I2C->DR;
 	} else {
-		while (!(I2C->SR1 & I2C_SR1_ADDR));
+		//while (!(I2C->SR1 & I2C_SR1_ADDR));
 		disableInterrupts();
 		I2C->SR3;
 		enableInterrupts();
@@ -217,7 +223,7 @@ u8 i2c_read_reg(u8 addr, u8 reg, u8 *buf, u16 size)
 
 	return 0;
 noack:
-	i2c_stop();
+	stop();
 	return I2C_ERR_NACK;
 }
 

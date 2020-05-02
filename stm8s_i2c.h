@@ -50,6 +50,9 @@
 
 #include "stm8s.h"
 
+/* Hold nof I2C recover actions is done */
+extern u16 i2c_error_counter;
+
 u8 i2c_write_reg(u8 addr, u8 reg, u8 *buf, u16 size);
 u8 i2c_read_reg(u8 addr, u8 reg, u8 *buf, u16 size);
 void i2c_slave(u8 addr, u8 **buf, u8 size);
