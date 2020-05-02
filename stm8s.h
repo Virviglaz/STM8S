@@ -38,6 +38,17 @@
 #define NULL			0
 #endif
 
+#if !defined(BSWAP16)
+#define BSWAP16(a)		((a & 0x00FF) << 8) | ((a & 0xFF00) >> 8)
+#endif
+
+#if !defined(BSWAP32)
+#define BSWAP32(a)		((a & 0x000000FF) << 24) | \
+				((a & 0x0000FF00) <<  8) | \
+				((a & 0x00FF0000) >>  8) | \
+				((a & 0xFF000000) >> 24)
+#endif
+
 #define assert_param(x)	(void)x
 
 /** @addtogroup STM8S_StdPeriph_Driver
