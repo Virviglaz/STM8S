@@ -68,7 +68,7 @@ u8 spi_read(u8 value)
 
 static inline void spi_select(GPIO_TypeDef *gpio, enum gpio_pin pin)
 {
-	gpio_reset(gpio, pin);
+	gpio_clr(gpio, pin);
 }
 
 static inline void spi_release(GPIO_TypeDef *gpio, enum gpio_pin pin)

@@ -103,7 +103,8 @@
 
 /* Legacy support */
 #define PIN_ON(x)		gpio_set(x)
-#define PIN_OFF(x)		gpio_reset(x)
+#define PIN_OFF(x)		gpio_clr(x)
+#define gpio_reset(x)		gpio_clr(x)
 
 enum gpio_pin
 {
@@ -150,7 +151,7 @@ static inline void gpio_set(GPIO_TypeDef *gpio, enum gpio_pin pin)
 	gpio->ODR |= (u8)pin;
 }
 
-static inline void gpio_reset(GPIO_TypeDef *gpio, enum gpio_pin pin)
+static inline void gpio_clr(GPIO_TypeDef *gpio, enum gpio_pin pin)
 {
 	gpio->ODR &= ~(u8)pin;
 }
@@ -166,7 +167,7 @@ static inline void gpio_pin_switch(GPIO_TypeDef *gpio, enum gpio_pin pin,
 	if (state)
 		gpio_set(gpio, pin);
 	else
-		gpio_reset(gpio, pin);
+		gpio_clr(gpio, pin);
 }
 
 static inline u8 gpio_get_latch(GPIO_TypeDef *gpio, enum gpio_pin pin)
