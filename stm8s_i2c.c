@@ -139,7 +139,7 @@ static inline u8 send_addr(u8 addr)
 	return 0;
 }
 
-static inline void i2c_write(u8 data)
+static inline void write(u8 data)
 {
 	while (!(I2C->SR1 & I2C_SR1_TXE));
 	I2C->DR = data;
@@ -153,9 +153,9 @@ u8 i2c_write_reg(u8 addr, u8 reg, u8 *buf, u16 size)
 
 	ret = send_addr(addr << 1);
 	if (!ret) {
-		i2c_write(reg);
+		write(reg);
 		while (size--)
-			i2c_write(*buf++);
+			write(*buf++);
 	}
 
 	while (!(I2C->SR1 & I2C_SR1_BTF));
@@ -170,7 +170,7 @@ u8 i2c_read_reg(u8 addr, u8 reg, u8 *buf, u16 size)
 
 	if (send_addr(addr << 1))
 		goto noack;
-	i2c_write(reg);
+	write(reg);
 	restart();
 	I2C->CR2 |= I2C_CR2_ACK;
 	if (send_addr((addr << 1) | 1))
@@ -198,7 +198,6 @@ u8 i2c_read_reg(u8 addr, u8 reg, u8 *buf, u16 size)
 		enableInterrupts();
 		*buf++ = I2C->DR;
 	} else {
-		//while (!(I2C->SR1 & I2C_SR1_ADDR));
 		disableInterrupts();
 		I2C->SR3;
 		enableInterrupts();

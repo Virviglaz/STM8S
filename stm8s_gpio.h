@@ -105,6 +105,7 @@
 #define PIN_ON(x)		gpio_set(x)
 #define PIN_OFF(x)		gpio_clr(x)
 #define gpio_reset(x)		gpio_clr(x)
+#define gpio_get_value(x)	gpio_read(x)
 
 enum gpio_pin
 {
@@ -175,7 +176,7 @@ static inline u8 gpio_get_latch(GPIO_TypeDef *gpio, enum gpio_pin pin)
 	return gpio->ODR & (u8)pin;
 }
 
-static inline u8 gpio_get_value(GPIO_TypeDef *gpio, enum gpio_pin pin)
+static inline u8 gpio_read(GPIO_TypeDef *gpio, enum gpio_pin pin)
 {
 	return gpio->IDR & (u8)pin;
 }
