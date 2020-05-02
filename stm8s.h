@@ -26,7 +26,17 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof(*x))
+#if !defined(ARRAY_SIZE)
+#define ARRAY_SIZE(x)		(sizeof(x) / sizeof(*x))
+#endif
+
+#if !defined(BIT)
+#define BIT(x)			(1 << x)
+#endif
+
+#if !defined(NULL)
+#define NULL			0
+#endif
 
 #define assert_param(x)	(void)x
 

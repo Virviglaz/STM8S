@@ -42,21 +42,17 @@
  * Pavel Nadein <pavelnadein@gmail.com>
  */
 
-#ifndef STM8S_CLK_H
-#define STM8S_CLK_H
+#ifndef STM8S_HAL_H
+#define STM8S_HAL_H
 
-#include "stm8s.h"
+#include "stm8s_adc.h"
+#include "stm8s_clk.h"
+#include "stm8s_delay.h"
+#include "stm8s_gpio.h"
+#include "stm8s_i2c.h"
+#include "stm8s_mem.h"
+#include "stm8s_spi.h"
+#include "stm8s_tim2.h"
+#include "stm8s_uart.h"
 
-enum clk_div
-{
-	CLK_NO_DIV = 0, /* 16 MHz */
-	CLK_DIV_2 = 1,	/* 8 MHz */
-	CLK_DIV_4 = 2,	/* 4 MHz */
-	CLK_DIV_8 = 3,	/* 2 MHz */
-};
-
-void clk_set(enum clk_div clk);
-enum clk_div clk_get(void);
-u8 clk_get_freq_MHz(void);
-
-#endif /* STM8S_CLK_H */
+#endif /* STM8S_HAL_H */

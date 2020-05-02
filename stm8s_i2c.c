@@ -57,11 +57,9 @@ static void i2c_stop(void)
 {
 	I2C->CR2 |= I2C_CR2_STOP;
 	while (I2C->SR1 & I2C_SR1_STOPF);
-
-	I2C->CR1 &= ~I2C_CR1_PE;
 }
 
-static u8 try_recover(void)
+static u8 inline try_recover(void)
 {
 	u16 i = 0xFFFF;
 
@@ -77,7 +75,7 @@ static u8 try_recover(void)
 	return I2C->SR3 & I2C_SR3_BUSY;
 }
 
-static void gpio_setup(void)
+static inline void gpio_setup(void)
 {
 	GPIOB->DDR &= ~(3 << 4);
 	GPIOB->ODR |= (3 << 4);
@@ -89,19 +87,21 @@ static void clk_setup(void)
 {
 	/* CCR = Fmaster / 2 * Fiic */
 	u16 ccr = clk_get_freq_MHz();
+	CLK->PCKENR1 |= CLK_PCKENR1_I2C;
 	I2C->FREQR = (u8)ccr;
 	I2C->TRISER = ccr + 1;
 	ccr = ccr * 5;
 	I2C->CCRL = (u8)ccr;
 	I2C->CCRH = ccr >> 8;
+	I2C->CR1 = I2C_CR1_PE;
 }
 
 static u8 i2c_start(void)
 {
-	gpio_setup();
-	clk_setup();
-
-	I2C->CR1 = I2C_CR1_PE;
+	if (!(CLK->PCKENR1 & CLK_PCKENR1_I2C) || !(I2C->CR1 & I2C_CR1_PE)) {
+		gpio_setup();
+		clk_setup();
+	}
 
 	if (I2C->SR3 & I2C_SR3_BUSY) {
 		if (try_recover()) {
@@ -116,7 +116,7 @@ static u8 i2c_start(void)
 	return 0;
 }
 
-static void i2c_restart(void)
+static inline void i2c_restart(void)
 {
 	I2C->CR2 = I2C_CR2_START;
 	while (!(I2C->SR1 & I2C_SR1_SB));
@@ -172,7 +172,6 @@ u8 i2c_read_reg(u8 addr, u8 reg, u8 *buf, u16 size)
 
 	if (size == 1) {
 		I2C->CR2 &= ~I2C_CR2_ACK;
-		while (!(I2C->SR1 & I2C_SR1_ADDR));
 		disableInterrupts();
 		I2C->SR3;
 		I2C->CR2 |= I2C_CR2_STOP;
