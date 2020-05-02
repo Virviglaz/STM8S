@@ -45,202 +45,129 @@
 #include "stm8s_i2c.h"
 #include "stm8s_clk.h"
 
-static struct {
+#define I2C_DONE		BIT(0)
+#define I2C_ACK_FAILURE		BIT(1)
+#define I2C_SENDING_DATA	BIT(2)
+#define I2C_READING_DATA	BIT(3)
+#define I2C_REPEATING_START	BIT(4)
+
+#define REG_SR1			sr[0]
+#define REG_SR2			sr[1]
+#define REG_SR3			sr[2]
+
+static void (*irq_handler)(void);
+static void master_tx_irq_handler(void);
+
+static volatile struct {
+	u8 res;
+	u8 addr;
+	u8 reg;
+	u8 *buf;
+	u16 size;
+	u16 pos;
+} master_buffer;
+
+static volatile struct {
 	u8 **buf;
 	u8 size;
 	u8 rdy; /* Data ready flag */
 	u8 upd_buf; /* Last updated buffer */
 	u8 bytes_rcv;
-} _i2c_slave;
+} slave_buffer;
 
-static inline void stop(void)
+static void master_irq_check_finish(u16 pos)
 {
-	I2C->CR2 |= I2C_CR2_STOP;
-	while (I2C->SR1 & I2C_SR1_STOPF);
+	master_buffer.pos = pos;
+	if (pos == master_buffer.size) {
+		I2C->CR2 = I2C_CR2_STOP;
+		master_buffer.res = I2C_DONE;
+		irq_handler = master_tx_irq_handler;
+	}
 }
 
-u16 i2c_error_counter = 0;
-static u8 inline try_recover(void)
+static u8 mstart_irq_check_errors(u8 sr2)
 {
-	u16 i = 0xFFFF;
-	if (i2c_error_counter < 0xFFFF)
-		i2c_error_counter++;
-
-	I2C->CR1 &= ~I2C_CR1_PE;
-	GPIOB->DDR |= (3 << 4);
-	GPIOB->ODR &= ~(3 << 4);
-	while (i--);
-	GPIOB->DDR &= ~(3 << 4);
-	GPIOB->ODR |= (3 << 4);
-	I2C->CR1 = I2C_CR1_PE;
-
-	stop();
-	return I2C->SR3 & I2C_SR3_BUSY;
+	/* Arbitration lost */
+	if (sr2 & I2C_SR2_ARLO) {
+		I2C->SR2 = 0;
+		return I2C_SR2_ARLO;
+	}
+	return 0;
 }
 
-static inline void gpio_setup(void)
+static void master_rx_irq_handler(void)
 {
-	GPIOB->DDR &= ~(3 << 4);
-	GPIOB->ODR |= (3 << 4);
-	GPIOB->CR1 &= ~(3 << 4);
-	GPIOB->CR2 &= ~(3 << 4);
-}
+	u8 sr[] = { I2C->SR1, I2C->SR2, I2C->SR3 };
+	u16 pos = master_buffer.pos;
 
-static inline void clk_setup(void)
-{
-	/* CCR = Fmaster / 2 * Fiic */
-	u16 ccr = clk_get_freq_MHz();
-	CLK->PCKENR1 |= CLK_PCKENR1_I2C;
-	I2C->FREQR = (u8)ccr;
-	I2C->TRISER = ccr + 1;
-	ccr = ccr * 5;
-	I2C->CCRL = (u8)ccr;
-	I2C->CCRH = ccr >> 8;
-	I2C->CR1 = I2C_CR1_PE;
-}
-
-static u8 start(void)
-{
-	if (!(CLK->PCKENR1 & CLK_PCKENR1_I2C) || !(I2C->CR1 & I2C_CR1_PE)) {
-		gpio_setup();
-		clk_setup();
-		stop();
+	/* Repeast start was send */
+	if (REG_SR1 & I2C_SR1_SB) {
+		I2C->DR = master_buffer.addr << 1 | 1;
+		if (master_buffer.size > 1)
+			I2C->CR2 = I2C_CR2_ACK;
+		return;
 	}
 
-	if (I2C->SR3 & I2C_SR3_BUSY) {
-		if (try_recover()) {
-			I2C->CR1 &= ~I2C_CR1_PE;
-			return I2C_ERR_BUSY;
+	/* Address has been send */
+	if (REG_SR1 & (I2C_SR1_ADDR | I2C_SR1_RXNE)) {
+		u8 data = I2C->DR;
+		master_buffer.buf[pos] = data;
+		pos++;
+		master_irq_check_finish(pos);
+		return;
+	}
+
+	if (mstart_irq_check_errors(REG_SR2))
+		return;
+}
+
+static void master_tx_irq_handler(void)
+{
+	u8 sr[] = { I2C->SR1, I2C->SR2, I2C->SR3 };
+	u16 pos = master_buffer.pos;
+
+	/* Start condition done, send address */
+	if (REG_SR1 & I2C_SR1_SB) {
+		I2C->DR = master_buffer.addr << 1;
+		return;
+	}
+
+	/* Acknowledge failure */
+	if (REG_SR2 & I2C_SR2_AF) {
+		I2C->SR2 = 0;
+		I2C->CR2 = I2C_CR2_STOP;
+		master_buffer.res = I2C_ACK_FAILURE;
+		return;
+	}
+
+	/* Send reg address */
+	if (REG_SR1 & I2C_SR1_ADDR) {
+		I2C->DR = master_buffer.reg;
+		if (master_buffer.res == I2C_READING_DATA) {
+			irq_handler = master_rx_irq_handler;
+			I2C->CR2 = I2C_CR2_START;
 		}
+		return;
 	}
 
-	I2C->CR2 = I2C_CR2_START;
-	while (!(I2C->SR1 & I2C_SR1_SB));
-
-	return 0;
-}
-
-static inline void restart(void)
-{
-	I2C->CR2 = I2C_CR2_START;
-	while (!(I2C->SR1 & I2C_SR1_SB));
-}
-
-static inline u8 send_addr(u8 addr)
-{
-	I2C->DR = addr;
-	while (!(I2C->SR1 & I2C_SR1_ADDR))
-		if (I2C->SR2 & I2C_SR2_AF)
-			return I2C_ERR_NACK;
-
-	I2C->SR3;
-	while (!I2C->SR1 & I2C_SR1_TXE);
-
-	return 0;
-}
-
-static inline void write(u8 data)
-{
-	while (!(I2C->SR1 & I2C_SR1_TXE));
-	I2C->DR = data;
-}
-
-u8 i2c_write_reg(u8 addr, u8 reg, u8 *buf, u16 size)
-{
-	u8 ret;
-	if (start())
-		return I2C_ERR_BUSY;
-
-	ret = send_addr(addr << 1);
-	if (!ret) {
-		write(reg);
-		while (size--)
-			write(*buf++);
+	/* Shift out the data */
+	if (REG_SR1 & I2C_SR1_TXE) {
+		I2C->DR = master_buffer.buf[pos];
+		pos++;
+		master_irq_check_finish(pos);
+		return;
 	}
 
-	while (!(I2C->SR1 & I2C_SR1_BTF));
-	stop();
-	return ret;
-}
+	if (mstart_irq_check_errors(REG_SR2))
+		return;
 
-u8 i2c_read_reg(u8 addr, u8 reg, u8 *buf, u16 size)
-{
-	if (start())
-		return I2C_ERR_BUSY;
-
-	if (send_addr(addr << 1))
-		goto noack;
-	write(reg);
-	restart();
-	I2C->CR2 |= I2C_CR2_ACK;
-	if (send_addr((addr << 1) | 1))
-		goto noack;
-
-	if (size == 1) {
-		I2C->CR2 &= ~I2C_CR2_ACK;
-		disableInterrupts();
-		I2C->SR3;
-		I2C->CR2 |= I2C_CR2_STOP;
-		enableInterrupts();
-		while (!(I2C->SR1 & I2C_SR1_RXNE));
-		*buf = I2C->DR;
-	} else if (size == 2) {
-		I2C->CR2 |= I2C_CR2_POS;
-		while (!(I2C->SR1 & I2C_SR1_ADDR));
-		disableInterrupts();
-		I2C->SR3;
-		I2C->CR2 &= ~I2C_CR2_ACK;
-		enableInterrupts();
-		while (!(I2C->SR1 & I2C_SR1_BTF));
-		disableInterrupts();
-		I2C->CR2 |= I2C_CR2_STOP;
-		*buf++ = I2C->DR;
-		enableInterrupts();
-		*buf++ = I2C->DR;
-	} else {
-		disableInterrupts();
-		I2C->SR3;
-		enableInterrupts();
-		while (size-- > 3) {
-			while (!(I2C->SR1 & I2C_SR1_BTF));
-			*buf++ = I2C->DR;
-		}
-
-		while (!(I2C->SR1 & I2C_SR1_BTF));
-		I2C->CR2 &= ~I2C_CR2_ACK;
-		disableInterrupts();
-		*buf++ = I2C->DR;
-		I2C->CR2 |= I2C_CR2_STOP;
-		*buf++ = I2C->DR;
-		enableInterrupts();
-		while (!(I2C->SR1 & I2C_SR1_RXNE));
-		*buf = I2C->DR;
+	if (REG_SR1 & I2C_SR1_RXNE) {
+		I2C->DR;
+		return;
 	}
-
-	while (!(I2C->CR2 & I2C_CR2_STOP));
-	I2C->CR2 &= ~I2C_CR2_POS;
-
-	return 0;
-noack:
-	stop();
-	return I2C_ERR_NACK;
 }
 
-void i2c_slave(u8 addr, u8 **buf, u8 size)
-{
-	_i2c_slave.buf = buf;
-	_i2c_slave.size = size;
-
-	clk_setup();
-	I2C->OARL = addr << 1;
-	I2C->OARH = I2C_OARH_ADDCONF;
-	I2C->ITR = I2C_ITR_ITBUFEN | I2C_ITR_ITEVTEN;
-	I2C->CR1 = I2C_CR1_PE;
-	I2C->CR2 |= I2C_CR2_ACK;
-	enableInterrupts();
-}
-
-INTERRUPT_HANDLER(I2C_IRQHandler, 19)
+static void slave_irq_handler(void)
 {
 	static u8 index_set = 0, i, num;
 	if (I2C->SR1 & I2C_SR1_ADDR) {
@@ -254,32 +181,127 @@ INTERRUPT_HANDLER(I2C_IRQHandler, 19)
 		if (!index_set) {
 			index_set = !0;
 			i = I2C->DR;
-			if (i >= _i2c_slave.size)
-				i = _i2c_slave.size - 1;
+			if (i >= slave_buffer.size)
+				i = slave_buffer.size - 1;
 		} else {
-			_i2c_slave.buf[i][num++] = I2C->DR;
+			u8 data = I2C->DR;
+			slave_buffer.buf[i][num] = data;
+			num++;
 		}
 	} else if (I2C->SR1 & I2C_SR1_STOPF) {
 		/* Stop condition */
-		_i2c_slave.rdy = !0;
-		_i2c_slave.upd_buf = i;
-		_i2c_slave.bytes_rcv = num;
+		slave_buffer.rdy = !0;
+		slave_buffer.upd_buf = i;
+		slave_buffer.bytes_rcv = num;
 	} else {
 		/* Reading the slave */
-		I2C->DR = _i2c_slave.buf[i][num++];
+		I2C->DR = slave_buffer.buf[i][num++];
 	}
 
 	I2C->SR3;
 }
 
+static void clk_setup(void)
+{
+	/* CCR = Fmaster / 2 * Fiic */
+	u16 ccr = clk_get_freq_MHz();
+	if (I2C->SR3 & I2C_SR3_BUSY)
+		I2C->CR2 = I2C_CR2_SWRST;
+	CLK->PCKENR1 |= CLK_PCKENR1_I2C;
+	I2C->FREQR = (u8)ccr;
+	I2C->TRISER = ccr + 1;
+	ccr = ccr * 5;
+	I2C->CCRL = (u8)ccr;
+	I2C->CCRH = ccr >> 8;
+}
+
+static void init(void)
+{
+	if (I2C->CR1 & I2C_CR1_PE && I2C->SR3 & I2C_SR3_MSL)
+		return;
+
+	/* PB4-> SCL, PB5->SDA */
+	GPIOB->DDR &= ~(3 << 4);
+	GPIOB->ODR |= (3 << 4);
+	GPIOB->CR1 &= ~(3 << 4);
+	GPIOB->CR2 &= ~(3 << 4);
+
+	clk_setup();
+	irq_handler = master_tx_irq_handler;
+	I2C->ITR = I2C_ITR_ITEVTEN | I2C_ITR_ITERREN;
+	I2C->CR1 = I2C_CR1_PE;
+	enableInterrupts();
+}
+
+INTERRUPT_HANDLER(I2C_IRQHandler, 19)
+{
+	irq_handler();
+}
+
+static u8 rw_reg(u8 addr, u8 reg, u8 *buf, u16 size, u8 flag)
+{
+	init();
+
+	master_buffer.res = flag;
+	master_buffer.pos = 0;
+	master_buffer.addr = addr;
+	master_buffer.reg = reg;
+	master_buffer.buf = buf;
+	master_buffer.size = size;
+
+	if (I2C->SR3 & I2C_SR3_BUSY) {
+		I2C->CR2 = I2C_CR2_STOP;
+		while (I2C->CR2 & I2C_CR2_STOP);
+	}
+
+	/* Start condition */
+	I2C->CR2 = I2C_CR2_START;
+
+	/* Wait for interrupt to finish */
+	while (!(master_buffer.res & (I2C_DONE | I2C_ACK_FAILURE)));
+
+	/* Wait for stop condition to finish */
+	while (I2C->CR2 & I2C_CR2_STOP);
+
+	if (master_buffer.res & I2C_ACK_FAILURE)
+		return I2C_ERR_NACK;
+
+	return !(master_buffer.res & I2C_DONE);
+}
+
+u8 i2c_write_reg(u8 addr, u8 reg, u8 *buf, u16 size)
+{
+	return rw_reg(addr, reg, buf, size, I2C_SENDING_DATA);
+}
+
+u8 i2c_read_reg(u8 addr, u8 reg, u8 *buf, u16 size)
+{
+	return rw_reg(addr, reg, buf, size, I2C_READING_DATA);
+}
+
+void i2c_slave(u8 addr, u8 **buf, u8 size)
+{
+	slave_buffer.buf = buf;
+	slave_buffer.size = size;
+	irq_handler = slave_irq_handler;
+
+	clk_setup();
+	I2C->OARL = addr << 1;
+	I2C->OARH = I2C_OARH_ADDCONF;
+	I2C->ITR = I2C_ITR_ITBUFEN | I2C_ITR_ITEVTEN;
+	I2C->CR1 = I2C_CR1_PE;
+	I2C->CR2 |= I2C_CR2_ACK;
+	enableInterrupts();
+}
+
 /* Returns number of bytes received last time */
 u8 i2c_slave_check_data(u8 *buf_num)
 {
-	if (!_i2c_slave.rdy)
+	if (!slave_buffer.rdy)
 		return 0;
 
 	if (buf_num)
-		*buf_num = _i2c_slave.upd_buf;
+		*buf_num = slave_buffer.upd_buf;
 
-	return _i2c_slave.bytes_rcv;
+	return slave_buffer.bytes_rcv;
 }
