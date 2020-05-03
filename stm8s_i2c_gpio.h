@@ -42,18 +42,31 @@
  * Pavel Nadein <pavelnadein@gmail.com>
  */
 
-#ifndef STM8S_HAL_H
-#define STM8S_HAL_H
+#ifndef STM8S_I2C_GPIO_H
+#define STM8S_I2C_GPIO_H
 
-#include "stm8s_adc.h"
-#include "stm8s_clk.h"
-#include "stm8s_delay.h"
+#include "stm8s.h"
 #include "stm8s_gpio.h"
-#include "stm8s_i2c.h"
-#include "stm8s_i2c_gpio.h"
-#include "stm8s_mem.h"
-#include "stm8s_spi.h"
-#include "stm8s_tim2.h"
-#include "stm8s_uart.h"
 
-#endif /* STM8S_HAL_H */
+enum i2c_gpio_res_t {
+	I2C_SUCCESS = 0,
+	I2C_TIMEOUT,
+	I2C_ERROR,
+	I2C_BUS_BUSY,
+	I2C_ACK_OK,
+	I2C_ACK_NOT_OK,
+	I2C_ADD_NOT_EXIST,
+	I2C_VERIFY_ERROR,
+	I2C_INTERFACE_ERROR,
+};
+
+enum i2c_gpio_res_t i2c_gpio_write(uint8_t i2c_addr,
+			      uint8_t *addr, uint8_t addr_len,
+			      uint8_t *buf, uint16_t size);
+
+enum i2c_gpio_res_t i2c_gpio_read(uint8_t i2c_addr,
+			      uint8_t *addr, uint8_t addr_len,
+			      uint8_t *buf, uint16_t size);
+
+
+#endif /* STM8S_I2C_GPIO_H */
