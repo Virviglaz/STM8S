@@ -49,8 +49,6 @@
 #define HIGH		1
 #define LOW		0
 
-#define DELAY()
-
 #define SCL_PIN		PB4
 #define SDA_PIN		PB5
 
@@ -58,7 +56,6 @@ static enum i2c_gpio_res_t start(void)
 {
 	gpio_set(SDA_PIN);
 	gpio_set(SCL_PIN);
-	DELAY();
 
 	/*
 	 * Check, if any BUS signal is low that meas that BUS is busy
@@ -68,9 +65,7 @@ static enum i2c_gpio_res_t start(void)
 		return I2C_BUS_BUSY;
 
 	gpio_clr(SDA_PIN);
-	DELAY();
 	gpio_clr(SCL_PIN);
-	DELAY();
 
 	return I2C_SUCCESS;
 }
@@ -79,20 +74,15 @@ static void restart(void)
 {
 	gpio_set(SDA_PIN);
 	gpio_set(SCL_PIN);
-	DELAY();
 	gpio_clr(SDA_PIN);
-	DELAY();
 	gpio_clr(SCL_PIN);
 }
 
 static void stop(void)
 {
-	DELAY();
 	gpio_clr(SDA_PIN);
 	gpio_set(SCL_PIN);
-	DELAY();
 	gpio_set(SDA_PIN);
-	DELAY();
 }
 
 static uint8_t clock(void)
@@ -100,10 +90,8 @@ static uint8_t clock(void)
 	uint8_t res;
 
 	gpio_set(SCL_PIN);
-	DELAY();
 	res = gpio_read(SDA_PIN);
 	gpio_clr(SCL_PIN);
-	DELAY();
 
 	return res;
 }
