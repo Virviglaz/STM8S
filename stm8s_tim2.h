@@ -47,8 +47,7 @@
 
 #include "stm8s.h"
 
-enum tim2_presc
-{
+enum tim2_presc {
 	TIM2_HSI_DIV_2,
 	TIM2_HSI_DIV_4,
 	TIM2_HSI_DIV_8,
@@ -59,12 +58,17 @@ enum tim2_presc
 	TIM2_HSI_DIV_256,
 };
 
-enum tim2_pwm
-{
+enum tim2_pwm {
 	TIM2_PWM1,
 	TIM2_PWM2,
 	TIM2_PWM3,
 };
+
+static inline void tim2_deinit(void)
+{
+	TIM2->CR1 = 0;
+	CLK->PCKENR1 &= ~CLK_PCKENR1_TIM2;
+}
 
 void tim2_init(enum tim2_presc prescaler, u16 period);
 void tim2_set_freq(u16 period);

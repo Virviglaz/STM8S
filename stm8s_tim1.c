@@ -1,40 +1,40 @@
 /*
  * This file is provided under a MIT license.  When using or
- *   redistributing this file, you may do so under either license.
+ * redistributing this file, you may do so under either license.
  *
- *   MIT License
+ * MIT License
  *
- *   Copyright (c) 2020 Pavel Nadein
+ * Copyright (c) 2020 Pavel Nadein
  *
- *   Permission is hereby granted, free of charge, to any person obtaining a copy
- *   of this software and associated documentation files (the "Software"), to deal
- *   in the Software without restriction, including without limitation the rights
- *   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- *   copies of the Software, and to permit persons to whom the Software is
- *   furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- *   The above copyright notice and this permission notice shall be included in all
- *   copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
  *
- *   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- *   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- *   SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  *
- *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- *   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- *   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- *   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- *   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- *   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * STM8S open source driver
  *
@@ -52,8 +52,6 @@ void tim1_init(u16 prescaler, u16 period)
 {
 	CLK->PCKENR1 |= CLK_PCKENR1_TIM1;
 	TIM1->CR1 = 0;
-	if (prescaler)
-		prescaler--;
 	TIM1->PSCRH = (u8)(prescaler >> 8);
 	TIM1->PSCRL = (u8)(prescaler);
 	TIM1->ARRH = (u8)(period >> 8);
@@ -89,39 +87,33 @@ INTERRUPT_HANDLER(TIM1_UPD_OVF_TRG_BRK_IRQHandler, 11)
 	TIM1->SR1 &= ~TIM1_SR1_UIF;
 }
 
-void pwm_enable(enum stepper_ch ch, u16 duty)
+void tim1_pwm_init(enum tim1_pwm ch, u16 duty)
 {
 	switch (ch) {
-	case STP_CH1:
-		/* PC6 */
-		OPT->OPT2 = 1;
-		GPIOC->DDR |= 1 << 6;
-		GPIOC->CR1 |= 1 << 6;
-		GPIOC->CR2 |= 1 << 6;
+	case TIM1_PWM1:
+		/* PC1 (AFR0 => PC6) */
+		OPT->OPT2 |= BIT(0); /* PC7 */
 		TIM1->CCMR1 = (7 << 4) | TIM1_CCMR_OCxPE;
 		TIM1->CCER1 = TIM1_CCER1_CC1E | TIM1_CCER1_CC1P;
 		TIM1->CCR1H = (u8)(duty >> 8);
 		TIM1->CCR1L = (u8)duty;
 		break;
-	case STP_CH2:
-		/* PC5 */
-		OPT->OPT2 = 1;
-		GPIOC->DDR |= 1 << 5;
-		GPIOC->CR1 |= 1 << 5;
-		GPIOC->CR2 |= 1 << 5;
+	case TIM1_PWM2:
+		/* PC2 (AFR0 => PC7) */
 		TIM1->CCMR2 = (7 << 4) | TIM1_CCMR_OCxPE;
-		TIM1->CCER2 = TIM1_CCER2_CC3E | TIM1_CCER2_CC3P;
+		TIM1->CCER1 = TIM1_CCER1_CC2E | TIM1_CCER1_CC2P;
 		TIM1->CCR2H = (u8)(duty >> 8);
 		TIM1->CCR2L = (u8)duty;
 		break;
-	case STP_CH3:
-		/* NOT USED IN TSOP20 */
+	case TIM1_PWM3:
+		/* PC3 */
+		TIM1->CCMR3 = (7 << 4) | TIM1_CCMR_OCxPE;
+		TIM1->CCER2 = TIM1_CCER2_CC3E | TIM1_CCER2_CC3P;
+		TIM1->CCR3H = (u8)(duty >> 8);
+		TIM1->CCR3L = (u8)duty;
 		break;
-	case STP_CH4:
+	case TIM1_PWM4:
 		/* PC4 */
-		GPIOC->DDR |= 1 << 4;
-		GPIOC->CR1 |= 1 << 4;
-		GPIOC->CR2 |= 1 << 4;
 		TIM1->CCMR4 = (7 << 4) | TIM1_CCMR_OCxPE;
 		TIM1->CCER2 = TIM1_CCER2_CC4E | TIM1_CCER2_CC4P;
 		TIM1->CCR4H = (u8)(duty >> 8);
@@ -131,7 +123,6 @@ void pwm_enable(enum stepper_ch ch, u16 duty)
 
 	TIM1->RCR = 0;
 	TIM1->BKR = TIM1_BKR_MOE;
-	TIM1->IER = TIM1_IER_UIE;
 	TIM1->EGR = TIM1_EGR_UG;
 	TIM1->CR1 = TIM1_CR1_CEN;
 }

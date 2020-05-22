@@ -52,6 +52,8 @@ void tim2_init(enum tim2_presc prescaler, u16 period)
 {
 	CLK->PCKENR1 |= CLK_PCKENR1_TIM2;
 	TIM2->CR1 = 0;
+	if (prescaler)
+		prescaler--;
 	TIM2->PSCR = (u8)prescaler;
 	TIM2->ARRH = (u8)(period >> 8);
 	TIM2->ARRL = (u8)(period);
@@ -84,18 +86,21 @@ void tim2_pwm_init(enum tim2_pwm ch, u16 duty)
 {
 	switch(ch) {
 	case TIM2_PWM1:
+		/* PD4 (AFR0 => PC5) */
 		TIM2->CCER1 |= TIM2_CCER1_CC1E;
 		TIM2->CCMR1 = 0x60; /* PWM1, no preload */
   		TIM2->CCR1H = (u8)(duty >> 8);
   		TIM2->CCR1L = (u8)(duty);
 		break;
 	case TIM2_PWM2:
+		/* PD3 */
 		TIM2->CCER1 |= TIM2_CCER1_CC2E;
 		TIM2->CCMR2 = 0x60; /* PWM1, no preload */
   		TIM2->CCR2H = (u8)(duty >> 8);
   		TIM2->CCR2L = (u8)(duty);
 		break;
 	case TIM2_PWM3:
+		/* PA3 (AFR1 => PD2) */
 		TIM2->CCER2 |= TIM2_CCER2_CC3E;
 		TIM2->CCMR3 = 0x60; /* PWM1, no preload */
   		TIM2->CCR3H = (u8)(duty >> 8);

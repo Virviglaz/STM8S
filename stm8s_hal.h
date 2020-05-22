@@ -53,6 +53,7 @@
 #include "stm8s_i2c_gpio.h"
 #include "stm8s_mem.h"
 #include "stm8s_spi.h"
+#include "stm8s_tim1.h"
 #include "stm8s_tim2.h"
 #include "stm8s_uart.h"
 
