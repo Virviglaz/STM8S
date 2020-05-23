@@ -60,6 +60,30 @@ static inline void tim1_deinit(void)
 	CLK->PCKENR1 &= ~CLK_PCKENR1_TIM1;
 }
 
+static inline void tim1_set_pwm1(u16 duty)
+{
+	TIM1->CCR1H = (u8)(duty >> 8);
+	TIM1->CCR1L = (u8)(duty);
+}
+
+static inline void tim1_set_pwm2(u16 duty)
+{
+	TIM1->CCR2H = (u8)(duty >> 8);
+	TIM1->CCR2L = (u8)(duty);
+}
+
+static inline void tim1_set_pwm3(u16 duty)
+{
+	TIM1->CCR3H = (u8)(duty >> 8);
+	TIM1->CCR3L = (u8)(duty);
+}
+
+static inline void tim1_set_pwm4(u16 duty)
+{
+	TIM1->CCR4H = (u8)(duty >> 8);
+	TIM1->CCR4L = (u8)(duty);
+}
+
 void tim1_init(u16 prescaler, u16 period);
 void tim1_set_freq(u16 period);
 void tim1_enable_irq(void (*handler)(void));

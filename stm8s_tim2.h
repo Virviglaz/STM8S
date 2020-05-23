@@ -70,11 +70,28 @@ static inline void tim2_deinit(void)
 	CLK->PCKENR1 &= ~CLK_PCKENR1_TIM2;
 }
 
+static inline void tim2_set_pwm1(u16 duty)
+{
+	TIM2->CCR1H = (u8)(duty >> 8);
+	TIM2->CCR1L = (u8)(duty);
+}
+
+static inline void tim2_set_pwm2(u16 duty)
+{
+	TIM2->CCR2H = (u8)(duty >> 8);
+	TIM2->CCR2L = (u8)(duty);
+}
+
+static inline void tim2_set_pwm3(u16 duty)
+{
+	TIM2->CCR3H = (u8)(duty >> 8);
+	TIM2->CCR3L = (u8)(duty);
+}
+
 void tim2_init(enum tim2_presc prescaler, u16 period);
 void tim2_set_freq(u16 period);
 void tim2_enable_irq(void (*handler)(void));
 void tim2_enable(bool enabled);
 void tim2_pwm_init(enum tim2_pwm ch, u16 duty);
-void tim2_pwm_set(enum tim2_pwm ch, u8 percentage);
 
 #endif /* STM8S_TIM2_H */

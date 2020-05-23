@@ -49,8 +49,10 @@
 #define HIGH		1
 #define LOW		0
 
+#if !defined(SCL_PIN) && !defined(SDA_PIN)
 #define SCL_PIN		PB4
 #define SDA_PIN		PB5
+#endif
 
 static enum i2c_gpio_res_t start(void)
 {

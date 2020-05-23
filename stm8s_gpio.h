@@ -122,11 +122,25 @@ enum gpio_pin
 	PIN_ALL	= ((uint8_t)0xFF),	/*!< All pins selected */
 };
 
-enum gpio_dir { INPUT, OUTPUT };
-enum gpio_speed { SPEED_2MHz, SPEED_10MHz };
-enum gpio_output_type { OPEN_DRAIN, PUSH_PULL };
+enum gpio_dir {
+	INPUT,
+	OUTPUT,
+};
 
-typedef struct { GPIO_TypeDef *gpio; enum gpio_pin pin; } io_pin;
+enum gpio_speed {
+	SPEED_2MHz,
+	SPEED_10MHz,
+};
+
+enum gpio_output_type {
+	OPEN_DRAIN,
+	PUSH_PULL,
+};
+
+typedef struct io_pin_t {
+	GPIO_TypeDef *gpio;
+	enum gpio_pin pin;
+} io_pin_t;
 
 static inline void gpio_set_dir(GPIO_TypeDef *gpio, enum gpio_pin pin,
 				enum gpio_dir dir)

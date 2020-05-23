@@ -92,7 +92,6 @@ void tim1_pwm_init(enum tim1_pwm ch, u16 duty)
 	switch (ch) {
 	case TIM1_PWM1:
 		/* PC1 (AFR0 => PC6) */
-		OPT->OPT2 |= BIT(0); /* PC7 */
 		TIM1->CCMR1 = (7 << 4) | TIM1_CCMR_OCxPE;
 		TIM1->CCER1 = TIM1_CCER1_CC1E | TIM1_CCER1_CC1P;
 		TIM1->CCR1H = (u8)(duty >> 8);
@@ -106,7 +105,7 @@ void tim1_pwm_init(enum tim1_pwm ch, u16 duty)
 		TIM1->CCR2L = (u8)duty;
 		break;
 	case TIM1_PWM3:
-		/* PC3 */
+		/* PC3 (not exist in TSOP20) */
 		TIM1->CCMR3 = (7 << 4) | TIM1_CCMR_OCxPE;
 		TIM1->CCER2 = TIM1_CCER2_CC3E | TIM1_CCER2_CC3P;
 		TIM1->CCR3H = (u8)(duty >> 8);
