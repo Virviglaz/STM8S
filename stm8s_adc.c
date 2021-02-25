@@ -73,7 +73,7 @@ uint16_t adc_read (enum adc_channel ch)
 	ADC1->CSR = (u8)ch;
 	ADC1->CR1 |= ADC1_CR1_ADON;
 	for (res.res8[0] = 0; res.res8[0] != ADC_STAB_TIME; res.res8[0]++)
-		asm("nop");
+		__asm("nop");
 	ADC1->CR1 |= ADC1_CR1_ADON;
 	while (!(ADC1->CSR & ADC1_CSR_EOC));
 	res.res8[1] = ADC1->DRL;
