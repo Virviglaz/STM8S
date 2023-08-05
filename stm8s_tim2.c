@@ -52,9 +52,7 @@ void tim2_init(enum tim2_presc prescaler, u16 period)
 {
 	CLK->PCKENR1 |= CLK_PCKENR1_TIM2;
 	TIM2->CR1 = 0;
-	if (prescaler)
-		prescaler--;
-	TIM2->PSCR = (u8)prescaler;
+	TIM2->PSCR = prescaler ? (u8)prescaler - 1 : 0;
 	TIM2->ARRH = (u8)(period >> 8);
 	TIM2->ARRL = (u8)(period);
 	TIM2->EGR |= TIM2_EGR_UG;

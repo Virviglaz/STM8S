@@ -64,6 +64,16 @@ enum tim2_pwm {
 	TIM2_PWM3,
 };
 
+static inline void tim2_enable(void)
+{
+	TIM2->CR1 |= TIM2_CR1_CEN;
+}
+
+static inline void tim2_disable(void)
+{
+	TIM2->CR1 &= ~TIM2_CR1_CEN;
+}
+
 static inline void tim2_deinit(void)
 {
 	TIM2->CR1 = 0;
@@ -80,6 +90,13 @@ static inline void tim2_set_pwm2(u16 duty)
 {
 	TIM2->CCR2H = (u8)(duty >> 8);
 	TIM2->CCR2L = (u8)(duty);
+}
+
+static inline void tim2_set_period(u16 period)
+{
+	TIM2->ARRH = (u8)(period >> 8);
+	TIM2->ARRL = (u8)(period);
+	TIM2->EGR |= TIM2_EGR_UG;
 }
 
 static inline void tim2_set_pwm3(u16 duty)
